@@ -109,6 +109,22 @@ func printp(p *int) {
 
 ref: https://github.com/kyoh86/exportloopref/blob/master/testdata/fixed/fixed.go
 
+## Sensing policy
+
+I want to make exportloopref as accurately as possible.
+So some cases of lints will be ignored.
+
+e.g.
+
+```go
+var s Foo
+for _, p := []int{10, 11, 12, 13} {
+  s.Bar(&p) // If s stores the pointer, it will be bug.
+}
+```
+
+If you want to report all of lints (with some false-positives),
+you should use [looppointer](https://github.com/kyoh86/looppointer).
 
 ## Install
 
