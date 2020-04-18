@@ -9,5 +9,8 @@ import (
 
 func Test(t *testing.T) {
 	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, exportloopref.Analyzer, "a")
+	analysistest.Run(t, testdata, exportloopref.Analyzer, "simple")
+	analysistest.Run(t, testdata, exportloopref.Analyzer, "struct")
+	analysistest.Run(t, testdata, exportloopref.Analyzer, "complex")
+	analysistest.Run(t, testdata, exportloopref.Analyzer, "fixed")
 }

@@ -7,67 +7,108 @@ An analyzer that finds exporting pointers for loop variables.
 
 ## What's this?
 
-Sample problem code from: https://github.com/kyoh86/scopelint/blob/master/example/readme.go
-
-```
-6  values := []string{"a", "b", "c"}
-7  var funcs []func()
-8  for _, val := range values {
-9  	funcs = append(funcs, func() {
-10 		fmt.Println(val)
-11 	})
-12 }
-13 for _, f := range funcs {
-14 	f()
-15 }
-16 /*output:
-17 c
-18 c
-19 c
-20 */
-21 var copies []*string
-22 for _, val := range values {
-23 	copies = append(copies, &val)
-24 }
-25 /*(in copies)
-26 &"c"
-27 &"c"
-28 &"c"
-29 */
-```
-
-In Go, the `val` variable in the above loops is actually a single variable.
-So in many case (like the above), using it makes for us annoying bugs.
-
-You can find them with `scopelint`, and fix it.
-
-```
-$ scopelint ./example/readme.go
-example/readme.go:10:16: Using the variable on range scope "val" in function literal
-example/readme.go:23:28: Using a reference for the variable on range scope "val"
-Found 2 lint problems; failing.
-```
-
-(Fixed sample):
+Sample problem code from: https://github.com/kyoh86/exportloopref/blob/master/testdata/simple/simple.go
 
 ```go
-values := []string{"a", "b", "c"}
-var funcs []func()
-for _, val := range values {
-  val := val // pin!
-	funcs = append(funcs, func() {
-		fmt.Println(val)
-	})
+package main
+
+func main() {
+	var intArray [4]*int
+	var intSlice []*int
+	var intRef *int
+	var intStr struct{ x *int }
+
+	println("loop expecting 10, 11, 12, 13")
+	for i, p := range []int{10, 11, 12, 13} {
+		printp(&p)                      // not a diagnostic
+		intSlice = append(intSlice, &p) // want "exporting a pointer for the loop variable p"
+		intArray[i] = &p                // want "exporting a pointer for the loop variable p"
+		if i%2 == 0 {
+			intRef = &p   // want "exporting a pointer for the loop variable p"
+			intStr.x = &p // want "exporting a pointer for the loop variable p"
+		}
+		var vStr struct{ x *int }
+		var vArray [4]*int
+		var v *int
+		if i%2 == 0 {
+			v = &p         // not a diagnostic (x is inner variable)
+			vArray[1] = &p // not a diagnostic (x is inner variable)
+			vStr.x = &p
+		}
+		_ = v
+	}
+
+	println(`slice expecting "10, 11, 12, 13" but "13, 13, 13, 13"`)
+	for _, p := range intSlice {
+		printp(p)
+	}
+	println(`array expecting "10, 11, 12, 13" but "13, 13, 13, 13"`)
+	for _, p := range intArray {
+		printp(p)
+	}
+	println(`captured value expecting "12" but "13"`)
+	printp(intRef)
 }
-for _, f := range funcs {
-	f()
-}
-var copies []*string
-for _, val := range values {
-  val := val // pin!
-	copies = append(copies, &val)
+
+func printp(p *int) {
+	println(*p)
 }
 ```
+
+In Go, the `p` variable in the above loops is actually a single variable.
+So in many case (like the above), using it makes for us annoying bugs.
+
+You can find them with `exportloopref`, and fix it.
+
+```go
+package main
+
+func main() {
+	var intArray [4]*int
+	var intSlice []*int
+	var intRef *int
+	var intStr struct{ x *int }
+
+	println("loop expecting 10, 11, 12, 13")
+	for i, p := range []int{10, 11, 12, 13} {
+    p := p                          // FIX variable into the inner variable
+		printp(&p)
+		intSlice = append(intSlice, &p) 
+		intArray[i] = &p
+		if i%2 == 0 {
+			intRef = &p
+			intStr.x = &p
+		}
+		var vStr struct{ x *int }
+		var vArray [4]*int
+		var v *int
+		if i%2 == 0 {
+			v = &p
+			vArray[1] = &p
+			vStr.x = &p
+		}
+		_ = v
+	}
+
+	println(`slice expecting "10, 11, 12, 13"`)
+	for _, p := range intSlice {
+		printp(p)
+	}
+	println(`array expecting "10, 11, 12, 13"`)
+	for _, p := range intArray {
+		printp(p)
+	}
+	println(`captured value expecting "12"`)
+	printp(intRef)
+}
+
+func printp(p *int) {
+	println(*p)
+}
+```
+
+ref: https://github.com/kyoh86/exportloopref/blob/master/testdata/fixed/fixed.go
+
 
 ## Install
 
@@ -78,8 +119,26 @@ go get github.com/kyoh86/exportloopref
 ## Usage
 
 ```
-exportloopref --help
+exportloopref [-flag] [package]
 ```
+
+### Flags
+
+| Flag | Description |
+| --- | --- |
+| -V                 | print version and exit |
+| -all               | no effect (deprecated) |
+| -c int             | display offending line with this many lines of context (default -1) |
+| -cpuprofile string | write CPU profile to this file |
+| -debug string      | debug flags, any subset of "fpstv" |
+| -fix               | apply all suggested fixes |
+| -flags             | print analyzer flags in JSON |
+| -json              | emit JSON output |
+| -memprofile string | write memory profile to this file |
+| -source            | no effect (deprecated) |
+| -tags string       | no effect (deprecated) |
+| -trace string      | write trace log to this file |
+| -v                 | no effect (deprecated) |
 
 # LICENSE
 
