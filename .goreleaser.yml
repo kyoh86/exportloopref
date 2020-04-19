@@ -1,0 +1,47 @@
+project_name: looppointer
+release:
+  github:
+    owner: kyoh86
+    name: looppointer
+brews:
+- install: |
+    bin.install "looppointer"
+    man1.install "looppointer.1"
+  github:
+    owner: kyoh86
+    name: homebrew-tap
+  folder: Formula
+  homepage: https://github.com/kyoh86/looppointer
+  description: An analyzer that checks for pointers to enclosing loop variables.
+builds:
+- goos:
+  - linux
+  - darwin
+  - windows
+  goarch:
+  - amd64
+  - "386"
+  main: .
+  ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+  binary: looppointer
+  hooks:
+    pre: make man
+archives:
+- id: gzip
+  format: tar.gz
+  format_overrides:
+    - goos: windows
+      format: zip
+  name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+  files:
+  - licence*
+  - LICENCE*
+  - license*
+  - LICENSE*
+  - readme*
+  - README*
+  - changelog*
+  - CHANGELOG*
+  - looppointer.1
+snapshot:
+  name_template: SNAPSHOT-{{ .Commit }}
