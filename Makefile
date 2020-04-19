@@ -14,6 +14,3 @@ test: lint
 
 install: test
 	go install -a -ldflags "-X=main.version=$(VERSION) -X=main.commit=$(COMMIT)" ./...
-
-man:
-	go run main.go --help-man > exportloopref.1

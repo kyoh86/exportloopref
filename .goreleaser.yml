@@ -6,7 +6,6 @@ release:
 brews:
 - install: |
     bin.install "looppointer"
-    man1.install "looppointer.1"
   github:
     owner: kyoh86
     name: homebrew-tap
@@ -24,8 +23,6 @@ builds:
   main: .
   ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
   binary: looppointer
-  hooks:
-    pre: make man
 archives:
 - id: gzip
   format: tar.gz
