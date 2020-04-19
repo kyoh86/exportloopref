@@ -20,7 +20,7 @@ builds:
   goarch:
   - amd64
   - "386"
-  main: .
+  main: ./cmd/exportloopref
   ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
   binary: looppointer
 archives:
