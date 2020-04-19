@@ -1,17 +1,17 @@
-project_name: looppointer
+project_name: exportloopref
 release:
   github:
     owner: kyoh86
-    name: looppointer
+    name: exportloopref
 brews:
 - install: |
-    bin.install "looppointer"
+    bin.install "exportloopref"
   github:
     owner: kyoh86
     name: homebrew-tap
   folder: Formula
-  homepage: https://github.com/kyoh86/looppointer
-  description: An analyzer that checks for pointers to enclosing loop variables.
+  homepage: https://github.com/kyoh86/exportloopref
+  description: An analyzer that finds exporting pointers for loop variables.
 builds:
 - goos:
   - linux
@@ -22,7 +22,7 @@ builds:
   - "386"
   main: ./cmd/exportloopref
   ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
-  binary: looppointer
+  binary: exportloopref
 archives:
 - id: gzip
   format: tar.gz
@@ -39,6 +39,5 @@ archives:
   - README*
   - changelog*
   - CHANGELOG*
-  - looppointer.1
 snapshot:
   name_template: SNAPSHOT-{{ .Commit }}
