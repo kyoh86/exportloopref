@@ -131,7 +131,7 @@ you should use [looppointer](https://github.com/kyoh86/looppointer).
 go:
 
 ```console
-$ go get github.com/kyoh86/exportloopref
+$ go get github.com/kyoh86/exportloopref/cmd/exportloopref
 ```
 
 [homebrew](https://brew.sh/):
