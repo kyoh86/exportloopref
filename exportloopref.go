@@ -253,6 +253,10 @@ func getIdentity(expr ast.Expr) *ast.Ident {
 		if !ok {
 			return nil
 		}
+		// parent is a package name identity
+		if parent.Obj == nil {
+			return nil
+		}
 		// NOTE: If that is descendants member like `a.b.c`,
 		//       typed.X will be `*ast.SelectorExpr`.
 		return parent
