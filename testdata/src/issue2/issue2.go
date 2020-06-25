@@ -1,4 +1,4 @@
-package issue
+package main
 
 // Issue #2 (https://github.com/kyoh86/exportloopref/issues/2
 // This is valid code because n takes new pointer values, so &n.name points correctly to different names.
@@ -17,7 +17,7 @@ type Graph struct {
 	nodes Nodes
 }
 
-func Issue2() {
+func main() {
 	var graph Graph
 	var s *string
 
