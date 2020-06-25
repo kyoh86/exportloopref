@@ -171,13 +171,8 @@ func (s *Searcher) checkUnaryExpr(n *ast.UnaryExpr, stack []ast.Node) (*ast.Iden
 	}
 
 	// Get identity of the referred item
-	id := getIdentity(n.X)
+	id := s.getIdentity(n.X)
 	if id == nil {
-		return nil, true
-	}
-
-	// Ignore Pointer loop (fix for #2)
-	if _, ok := s.Types[id].Type.(*types.Pointer); ok {
 		return nil, true
 	}
 
@@ -259,7 +254,7 @@ func (s *Searcher) isVar(loop ast.Node, expr ast.Expr) bool {
 }
 
 // Get variable identity
-func getIdentity(expr ast.Expr) *ast.Ident {
+func (s *Searcher) getIdentity(expr ast.Expr) *ast.Ident {
 	switch typed := expr.(type) {
 	case *ast.SelectorExpr:
 		// Get parent identity; i.e. `a` of the `a.b`.
@@ -267,12 +262,19 @@ func getIdentity(expr ast.Expr) *ast.Ident {
 		if !ok {
 			return nil
 		}
+
 		// parent is a package name identity
 		if parent.Obj == nil {
 			return nil
 		}
+
+		// Ignore if the parent is pointer ref (fix for #2)
+		if _, ok := s.Types[parent].Type.(*types.Pointer); ok {
+			return nil
+		}
+
 		// NOTE: If that is descendants member like `a.b.c`,
-		//       typed.X will be `*ast.SelectorExpr`.
+		//       typed.X will be `*ast.SelectorExpr` `a.b`.
 		return parent
 
 	case *ast.Ident:
