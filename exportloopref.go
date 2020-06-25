@@ -3,6 +3,7 @@ package exportloopref
 import (
 	"go/ast"
 	"go/token"
+	"go/types"
 
 	"golang.org/x/tools/go/analysis"
 	"golang.org/x/tools/go/analysis/passes/inspect"
@@ -29,6 +30,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	search := &Searcher{
 		Stats: map[token.Pos]struct{}{},
 		Vars:  map[token.Pos]map[token.Pos]struct{}{},
+		Types: pass.TypesInfo.Types,
 	}
 
 	nodeFilter := []ast.Node{
@@ -51,10 +53,16 @@ func run(pass *analysis.Pass) (interface{}, error) {
 }
 
 type Searcher struct {
-	// statement variables
+	// Statement variables : map to collect positions that
+	// variables are declared like below.
+	//  - for <KEY>, <VALUE> := range ...
+	//  - var <X> int
+	//  - D := ...
 	Stats map[token.Pos]struct{}
-	// internal variables
-	Vars map[token.Pos]map[token.Pos]struct{}
+	// Internal variables maps loop-position, decl-location to ignore
+	// safe pointers for variable which declared in the loop.
+	Vars  map[token.Pos]map[token.Pos]struct{}
+	Types map[ast.Expr]types.TypeAndValue
 }
 
 func (s *Searcher) Check(n ast.Node, stack []ast.Node) (*ast.Ident, bool) {
@@ -67,6 +75,7 @@ func (s *Searcher) Check(n ast.Node, stack []ast.Node) (*ast.Ident, bool) {
 		s.parseDeclStmt(typed, stack)
 	case *ast.AssignStmt:
 		s.parseAssignStmt(typed, stack)
+
 	case *ast.UnaryExpr:
 		return s.checkUnaryExpr(typed, stack)
 	}
@@ -164,6 +173,11 @@ func (s *Searcher) checkUnaryExpr(n *ast.UnaryExpr, stack []ast.Node) (*ast.Iden
 	// Get identity of the referred item
 	id := getIdentity(n.X)
 	if id == nil {
+		return nil, true
+	}
+
+	// Ignore Pointer loop (fix for #2)
+	if _, ok := s.Types[id].Type.(*types.Pointer); ok {
 		return nil, true
 	}
 
