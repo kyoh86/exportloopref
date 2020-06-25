@@ -13,4 +13,5 @@ func Test(t *testing.T) {
 	analysistest.Run(t, testdata, exportloopref.Analyzer, "struct")
 	analysistest.Run(t, testdata, exportloopref.Analyzer, "complex")
 	analysistest.Run(t, testdata, exportloopref.Analyzer, "fixed")
+	analysistest.Run(t, testdata, exportloopref.Analyzer, "issue")
 }
