@@ -4,6 +4,7 @@ An analyzer that finds exporting pointers for loop variables.
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/kyoh86/exportloopref)](https://goreportcard.com/report/github.com/kyoh86/exportloopref)
 [![Coverage Status](https://img.shields.io/codecov/c/github/kyoh86/exportloopref.svg)](https://codecov.io/gh/kyoh86/exportloopref)
+[![Release](https://github.com/kyoh86/exportloopref/workflows/Release/badge.svg)](https://github.com/kyoh86/exportloopref/releases)
 
 ## What's this?
 
