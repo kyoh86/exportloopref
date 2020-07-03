@@ -257,25 +257,13 @@ func (s *Searcher) isVar(loop ast.Node, expr ast.Expr) bool {
 func (s *Searcher) getIdentity(expr ast.Expr) *ast.Ident {
 	switch typed := expr.(type) {
 	case *ast.SelectorExpr:
-		// Get parent identity; i.e. `a` of the `a.b`.
-		parent, ok := typed.X.(*ast.Ident)
-		if !ok {
-			return nil
-		}
-
-		// parent is a package name identity
-		if parent.Obj == nil {
-			return nil
-		}
-
 		// Ignore if the parent is pointer ref (fix for #2)
-		if _, ok := s.Types[parent].Type.(*types.Pointer); ok {
+		if _, ok := s.Types[typed.X].Type.(*types.Pointer); ok {
 			return nil
 		}
 
-		// NOTE: If that is descendants member like `a.b.c`,
-		//       typed.X will be `*ast.SelectorExpr` `a.b`.
-		return parent
+		// Get parent identity; i.e. `a.b` of the `a.b.c`.
+		return s.getIdentity(typed.X)
 
 	case *ast.Ident:
 		// Get simple identity; i.e. `a` of the `a`.

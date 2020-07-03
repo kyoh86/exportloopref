@@ -36,3 +36,13 @@ func TestIssue2(t *testing.T) {
 	testdata := analysistest.TestData()
 	analysistest.Run(t, testdata, exportloopref.Analyzer, "issue2")
 }
+
+func TestDeep(t *testing.T) {
+	testdata := analysistest.TestData()
+	analysistest.Run(t, testdata, exportloopref.Analyzer, "deep")
+}
+
+func TestDepPointer(t *testing.T) {
+	testdata := analysistest.TestData()
+	analysistest.Run(t, testdata, exportloopref.Analyzer, "deeppointer")
+}
