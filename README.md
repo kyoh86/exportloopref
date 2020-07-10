@@ -113,7 +113,7 @@ ref: https://github.com/kyoh86/exportloopref/blob/master/testdata/fixed/fixed.go
 ## Sensing policy
 
 I want to make exportloopref as accurately as possible.
-So some cases of lints will be ignored.
+So some cases of lints will be false-negative.
 
 e.g.
 
@@ -126,6 +126,48 @@ for _, p := []int{10, 11, 12, 13} {
 
 If you want to report all of lints (with some false-positives),
 you should use [looppointer](https://github.com/kyoh86/looppointer).
+
+### Known false negatives
+
+Case 1: pass the pointer to function to export.
+
+Case 2: pass the pointer to local variable, and export it.
+
+```go
+package main
+
+type List []*int
+
+func (l *List) AppendP(p *int) {
+	*l = append(*l, p)
+}
+
+func main() {
+	var slice []*int
+	list := List{}
+
+	println("loop expect exporting 10, 11, 12, 13")
+	for _, v := range []int{10, 11, 12, 13} {
+		list.AppendP(&v) // Case 1: wanted "exporting a pointer for the loop variable v", but cannot be found
+
+		p := &v                  // p is the local variable
+		slice = append(slice, p) // Case 2: wanted "exporting a pointer for the loop variable v", but cannot be found
+	}
+
+	println(`slice expecting "10, 11, 12, 13" but "13, 13, 13, 13"`)
+	for _, p := range slice {
+		printp(p)
+	}
+	println(`array expecting "10, 11, 12, 13" but "13, 13, 13, 13"`)
+	for _, p := range ([]*int)(list) {
+		printp(p)
+	}
+}
+
+func printp(p *int) {
+	println(*p)
+}
+```
 
 ## Install
 

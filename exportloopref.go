@@ -1,6 +1,7 @@
 package exportloopref
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 	"go/types"
@@ -44,7 +45,8 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	inspect.WithStack(nodeFilter, func(n ast.Node, push bool, stack []ast.Node) bool {
 		id, digg := search.Check(n, stack)
 		if id != nil {
-			pass.ReportRangef(id, "exporting a pointer for the loop variable %s", id.Name)
+			msg := fmt.Sprintf("exporting a pointer for the loop variable %s", id.Name)
+			pass.Report(analysis.Diagnostic{Pos: id.Pos(), End: id.End(), Message: msg, Category: "exportloopref"})
 		}
 		return digg
 	})
