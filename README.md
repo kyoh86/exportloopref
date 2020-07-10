@@ -32,8 +32,8 @@ func main() {
 		var vArray [4]*int
 		var v *int
 		if i%2 == 0 {
-			v = &p         // not a diagnostic (x is inner variable)
-			vArray[1] = &p // not a diagnostic (x is inner variable)
+			v = &p         // not a diagnostic (x is local variable)
+			vArray[1] = &p // not a diagnostic (x is local variable)
 			vStr.x = &p
 		}
 		_ = v
@@ -72,7 +72,7 @@ func main() {
 
 	println("loop expecting 10, 11, 12, 13")
 	for i, p := range []int{10, 11, 12, 13} {
-    p := p                          // FIX variable into the inner variable
+    p := p                          // FIX variable into the local variable
 		printp(&p)
 		intSlice = append(intSlice, &p) 
 		intArray[i] = &p

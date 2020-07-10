@@ -19,8 +19,8 @@ func main() {
 		var vArray [4]*int
 		var v *int
 		if i%2 == 0 {
-			v = &p         // not a diagnostic (x is inner variable)
-			vArray[1] = &p // not a diagnostic (x is inner variable)
+			v = &p         // not a diagnostic (x is local variable)
+			vArray[1] = &p // not a diagnostic (x is local variable)
 			vStr.x = &p
 		}
 		_ = v

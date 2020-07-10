@@ -61,7 +61,7 @@ type Searcher struct {
 	//  - var <X> int
 	//  - D := ...
 	Stats map[token.Pos]struct{}
-	// Internal variables maps loop-position, decl-location to ignore
+	// Local variables maps loop-position, decl-location to ignore
 	// safe pointers for variable which declared in the loop.
 	Vars  map[token.Pos]map[token.Pos]struct{}
 	Types map[ast.Expr]types.TypeAndValue
@@ -130,7 +130,7 @@ func (s *Searcher) parseAssignStmt(n *ast.AssignStmt, stack []ast.Node) {
 		return
 	}
 
-	// Find statements declaring internal variable
+	// Find statements declaring local variable
 	if n.Tok == token.DEFINE {
 		for _, h := range n.Lhs {
 			s.addVar(loop, h)
@@ -219,7 +219,7 @@ func (s *Searcher) checkUnaryExpr(n *ast.UnaryExpr, stack []ast.Node) (*ast.Iden
 				}
 			}
 
-			// check Lhs[x] is not inner variable
+			// check Lhs[x] is not local variable
 			lh := typed.Lhs[index]
 			isVar := s.isVar(loop, lh)
 			if !isVar {
