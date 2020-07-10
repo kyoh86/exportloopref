@@ -43,10 +43,28 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 
 	inspect.WithStack(nodeFilter, func(n ast.Node, push bool, stack []ast.Node) bool {
-		id, digg := search.Check(n, stack)
+		id, insert, digg := search.Check(n, stack)
 		if id != nil {
-			msg := fmt.Sprintf("exporting a pointer for the loop variable %s", id.Name)
-			pass.Report(analysis.Diagnostic{Pos: id.Pos(), End: id.End(), Message: msg, Category: "exportloopref"})
+			dMsg := fmt.Sprintf("exporting a pointer for the loop variable %s", id.Name)
+			fMsg := fmt.Sprintf("loop variable %s should be pinned", id.Name)
+			var suggest []analysis.SuggestedFix
+			if insert != token.NoPos {
+				suggest = []analysis.SuggestedFix{{
+					Message: fMsg,
+					TextEdits: []analysis.TextEdit{{
+						Pos:     insert,
+						End:     insert,
+						NewText: []byte(fmt.Sprintf("%[1]s := %[1]s\n", id.Name)),
+					}},
+				}}
+			}
+			d := analysis.Diagnostic{Pos: id.Pos(),
+				End:            id.End(),
+				Message:        dMsg,
+				Category:       "exportloopref",
+				SuggestedFixes: suggest,
+			}
+			pass.Report(d)
 		}
 		return digg
 	})
@@ -67,7 +85,7 @@ type Searcher struct {
 	Types map[ast.Expr]types.TypeAndValue
 }
 
-func (s *Searcher) Check(n ast.Node, stack []ast.Node) (*ast.Ident, bool) {
+func (s *Searcher) Check(n ast.Node, stack []ast.Node) (*ast.Ident, token.Pos, bool) {
 	switch typed := n.(type) {
 	case *ast.RangeStmt:
 		s.parseRangeStmt(typed)
@@ -81,7 +99,7 @@ func (s *Searcher) Check(n ast.Node, stack []ast.Node) (*ast.Ident, bool) {
 	case *ast.UnaryExpr:
 		return s.checkUnaryExpr(typed, stack)
 	}
-	return nil, true
+	return nil, token.NoPos, true
 }
 
 func (s *Searcher) parseRangeStmt(n *ast.RangeStmt) {
@@ -109,7 +127,7 @@ func (s *Searcher) addStat(expr ast.Expr) {
 }
 
 func (s *Searcher) parseDeclStmt(n *ast.DeclStmt, stack []ast.Node) {
-	loop := s.innermostLoop(stack)
+	loop, _ := s.innermostLoop(stack)
 	if loop == nil {
 		return
 	}
@@ -125,7 +143,7 @@ func (s *Searcher) parseDeclStmt(n *ast.DeclStmt, stack []ast.Node) {
 }
 
 func (s *Searcher) parseAssignStmt(n *ast.AssignStmt, stack []ast.Node) {
-	loop := s.innermostLoop(stack)
+	loop, _ := s.innermostLoop(stack)
 	if loop == nil {
 		return
 	}
@@ -152,36 +170,45 @@ func (s *Searcher) addVar(loop ast.Node, expr ast.Expr) {
 	s.Vars[loopPos] = vars
 }
 
-func (s *Searcher) innermostLoop(stack []ast.Node) ast.Node {
-	for i := len(stack) - 1; i >= 0; i-- {
-		switch stack[i].(type) {
-		case *ast.RangeStmt, *ast.ForStmt:
-			return stack[i]
-		}
+func insertionPosition(block *ast.BlockStmt) token.Pos {
+	if len(block.List) > 0 {
+		return block.List[0].Pos()
 	}
-	return nil
+	return token.NoPos
 }
 
-func (s *Searcher) checkUnaryExpr(n *ast.UnaryExpr, stack []ast.Node) (*ast.Ident, bool) {
-	loop := s.innermostLoop(stack)
+func (s *Searcher) innermostLoop(stack []ast.Node) (ast.Node, token.Pos) {
+	for i := len(stack) - 1; i >= 0; i-- {
+		switch typed := stack[i].(type) {
+		case *ast.RangeStmt:
+			return typed, insertionPosition(typed.Body)
+		case *ast.ForStmt:
+			return typed, insertionPosition(typed.Body)
+		}
+	}
+	return nil, token.NoPos
+}
+
+func (s *Searcher) checkUnaryExpr(n *ast.UnaryExpr, stack []ast.Node) (*ast.Ident, token.Pos, bool) {
+	loop, insert := s.innermostLoop(stack)
 	if loop == nil {
-		return nil, true
+		return nil, token.NoPos, true
 	}
 
 	if n.Op != token.AND {
-		return nil, true
+		return nil, token.NoPos, true
 	}
 
 	// Get identity of the referred item
 	id := s.getIdentity(n.X)
 	if id == nil {
-		return nil, true
+		return nil, token.NoPos, true
 	}
 
 	// If the identity is not the loop statement variable,
 	// it will not be reported.
 	if _, isStat := s.Stats[id.Obj.Pos()]; !isStat {
-		return nil, true
+		return nil, token.NoPos, true
 	}
 
 	// check stack append(), []X{}, map[Type]X{}, Struct{}, &Struct{}, X.(Type), (X)
@@ -198,16 +225,16 @@ func (s *Searcher) checkUnaryExpr(n *ast.UnaryExpr, stack []ast.Node) (*ast.Iden
 		case (*ast.CallExpr):
 			fun, ok := typed.Fun.(*ast.Ident)
 			if !ok {
-				return nil, false // it's calling a function other of `append`. It cannot be checked
+				return nil, token.NoPos, false // it's calling a function other of `append`. It cannot be checked
 			}
 
 			if fun.Name != "append" {
-				return nil, false // it's calling a function other of `append`. It cannot be checked
+				return nil, token.NoPos, false // it's calling a function other of `append`. It cannot be checked
 			}
 
 		case (*ast.AssignStmt):
 			if len(typed.Rhs) != len(typed.Lhs) {
-				return nil, false // dead logic
+				return nil, token.NoPos, false // dead logic
 			}
 
 			// search x where Rhs[x].Pos() == mayRHPos
@@ -223,19 +250,19 @@ func (s *Searcher) checkUnaryExpr(n *ast.UnaryExpr, stack []ast.Node) (*ast.Iden
 			lh := typed.Lhs[index]
 			isVar := s.isVar(loop, lh)
 			if !isVar {
-				return id, false
+				return id, insert, false
 			}
 
-			return nil, true
+			return nil, token.NoPos, true
 		default:
 			// Other statement is not able to be checked.
-			return nil, false
+			return nil, token.NoPos, false
 		}
 
 		// memory an expr that may be right-hand in the AssignStmt
 		mayRHPos = stack[i].Pos()
 	}
-	return nil, true
+	return nil, token.NoPos, true
 }
 
 func (s *Searcher) isVar(loop ast.Node, expr ast.Expr) bool {
