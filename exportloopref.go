@@ -11,6 +11,8 @@ import (
 	"golang.org/x/tools/go/ast/inspector"
 )
 
+var DisallowFuncs bool
+
 var Analyzer = &analysis.Analyzer{
 	Name:             "exportloopref",
 	Doc:              "checks for pointers to enclosing loop variables",
@@ -22,7 +24,7 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func init() {
-	//	Analyzer.Flags.StringVar(&v, "name", "default", "description")
+	Analyzer.Flags.BoolVar(&DisallowFuncs, "disallowFuncs", false, "If true, passing a reference to a loop variable to a function will result in a lint finding.")
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
@@ -223,13 +225,25 @@ func (s *Searcher) checkUnaryExpr(n *ast.UnaryExpr, stack []ast.Node) (*ast.Iden
 		case (*ast.KeyValueExpr):
 			// noop
 		case (*ast.CallExpr):
-			fun, ok := typed.Fun.(*ast.Ident)
-			if !ok {
-				return nil, token.NoPos, false // it's calling a function other of `append`. It cannot be checked
+			switch fun := typed.Fun.(type) {
+			case *ast.Ident:
+				if fun.String() == "print" || fun.String() == "println" {
+					// Built-in print functions are safe.
+					return nil, token.NoPos, false
+				}
+				if fun.String() == "append" {
+					// Let this be caught by assignment in the next iteration.
+					continue
+				}
+			case *ast.SelectorExpr: // foo.ReadFile
+				pkgID := fun.X.(*ast.Ident)
+				if pkgID.String() == "fmt" {
+					// Standard library print functions are safe.
+					return nil, token.NoPos, false
+				}
 			}
-
-			if fun.Name != "append" {
-				return nil, token.NoPos, false // it's calling a function other of `append`. It cannot be checked
+			if DisallowFuncs {
+				return id, insert, false
 			}
 
 		case (*ast.AssignStmt):
