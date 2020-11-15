@@ -9,7 +9,7 @@ An analyzer that finds exporting pointers for loop variables.
 
 ## What's this?
 
-Sample problem code from: https://github.com/kyoh86/exportloopref/blob/master/testdata/src/simple/simple.go
+Sample problem code from: https://github.com/kyoh86/exportloopref/blob/main/testdata/src/simple/simple.go
 
 ```go
 package main
@@ -109,7 +109,7 @@ func printp(p *int) {
 }
 ```
 
-ref: https://github.com/kyoh86/exportloopref/blob/master/testdata/src/fixed/fixed.go
+ref: https://github.com/kyoh86/exportloopref/blob/main/testdata/src/fixed/fixed.go
 
 ## Sensing policy
 
