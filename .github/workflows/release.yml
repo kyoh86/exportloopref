@@ -1,24 +1,51 @@
-name: Release
-
+name: Release to the GitHub Release
 on:
-  push:
-    tags:
-      - v[0-9]+.[0-9]+.[0-9]+
+  workflow_dispatch:
+    inputs:
+      method:
+        description: |
+          Which number to increment in the semantic versioning.
+          Set 'major', 'minor' or 'patch'.
+        required: true
 
 jobs:
   release:
+    name: Release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - name: Check Actor
+        if: github.actor != 'kyoh86'
+        run: exit 1
+      - name: Check Branch
+        if: github.ref != 'refs/heads/main'
+        run: exit 1
+      - name: Wait Tests
+        id: test_result
+        uses: Sibz/await-status-action@v1.0.1
         with:
-          go-version: 1.15.x
-      - name: get dependencies
-        run: go get -v -t -d ./...
-      - name: test race
-        run: go test -v -race ./...
-      - uses: goreleaser/goreleaser-action@v2
+          contexts: test-status
+          authToken: ${{ secrets.GITHUB_TOKEN }}
+          timeout: 30
+      - name: Check Test Result
+        if: steps.test_result.outputs.result != 'success'
+        run: |
+          echo "feiled ${{ steps.test_result.outputs.failedCheckNames }}"
+          echo "status ${{ steps.test_result.outputs.failedCheckStates }}"
+          exit 1
+      - name: Checkout Sources
+        uses: actions/checkout@v2
+      - name: Bump-up Semantic Version
+        uses: kyoh86/git-vertag-action@v1
         with:
-          args: release --rm-dist
+          # method: "major", "minor" or "patch" to update tag with semver
+          method: "${{ github.event.inputs.method }}"
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GORELEASER_GITHUB_TOKEN }}
+        with:
+          args: release --rm-dist
