@@ -1,6 +1,8 @@
 # exportloopref
 
 An analyzer that finds exporting pointers for loop variables.
+![](https://repository-images.githubusercontent.com/256768552/a1c5bb80-dd73-11eb-9453-e520f517e730)
+Pin them all!
 
 [![PkgGoDev](https://pkg.go.dev/badge/kyoh86/exportloopref)](https://pkg.go.dev/kyoh86/exportloopref)
 [![Go Report Card](https://goreportcard.com/badge/github.com/kyoh86/exportloopref)](https://goreportcard.com/report/github.com/kyoh86/exportloopref)
