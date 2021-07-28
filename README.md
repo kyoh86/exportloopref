@@ -122,7 +122,7 @@ e.g.
 
 ```go
 var s Foo
-for _, p := []int{10, 11, 12, 13} {
+for _, p := range []int{10, 11, 12, 13} {
   s.Bar(&p) // If s stores the pointer, it will be bug.
 }
 ```
