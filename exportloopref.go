@@ -17,12 +17,6 @@ var Analyzer = &analysis.Analyzer{
 	Run:              run,
 	RunDespiteErrors: true,
 	Requires:         []*analysis.Analyzer{inspect.Analyzer},
-	// ResultType reflect.Type
-	// FactTypes []Fact
-}
-
-func init() {
-	//	Analyzer.Flags.StringVar(&v, "name", "default", "description")
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
