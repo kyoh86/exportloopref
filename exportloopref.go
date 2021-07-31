@@ -53,7 +53,7 @@ type Searcher struct {
 	Pass *analysis.Pass
 }
 
-// CheckAndReport inspects each node with stacks.
+// CheckAndReport inspects each node with stack.
 // It is implemented as the I/F of the "golang.org/x/tools/go/analysis/passes/inspect".Analysis.WithStack.
 func (s *Searcher) CheckAndReport(n ast.Node, push bool, stack []ast.Node) bool {
 	id, insert, digg := s.Check(n, stack)
@@ -213,13 +213,15 @@ func (s *Searcher) innermostLoop(stack []ast.Node) (ast.Node, token.Pos) {
 	return nil, token.NoPos
 }
 
+// checkUnaryExpr check unary expression (i.e. <OPERATOR><VAR> like `-x`, `*p` or `&v`) and stack.
+// THIS IS THE ESSENTIAL PART OF THIS PARSER.
 func (s *Searcher) checkUnaryExpr(n *ast.UnaryExpr, stack []ast.Node) (*ast.Ident, token.Pos, bool) {
-	loop, insert := s.innermostLoop(stack)
-	if loop == nil {
+	if n.Op != token.AND {
 		return nil, token.NoPos, true
 	}
 
-	if n.Op != token.AND {
+	loop, insert := s.innermostLoop(stack)
+	if loop == nil {
 		return nil, token.NoPos, true
 	}
 
