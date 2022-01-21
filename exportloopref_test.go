@@ -46,3 +46,13 @@ func TestDepPointer(t *testing.T) {
 	testdata := analysistest.TestData()
 	analysistest.Run(t, testdata, exportloopref.Analyzer, "deeppointer")
 }
+
+func TestBreak(t *testing.T) {
+	testdata := analysistest.TestData()
+	analysistest.Run(t, testdata, exportloopref.Analyzer, "break")
+}
+
+func TestReturn(t *testing.T) {
+	testdata := analysistest.TestData()
+	analysistest.Run(t, testdata, exportloopref.Analyzer, "return")
+}
