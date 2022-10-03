@@ -17,6 +17,11 @@ func TestStruct(t *testing.T) {
 	analysistest.Run(t, testdata, exportloopref.Analyzer, "struct")
 }
 
+func TestCompose(t *testing.T) {
+	testdata := analysistest.TestData()
+	analysistest.Run(t, testdata, exportloopref.Analyzer, "compose")
+}
+
 func TestComplex(t *testing.T) {
 	testdata := analysistest.TestData()
 	analysistest.Run(t, testdata, exportloopref.Analyzer, "complex")
