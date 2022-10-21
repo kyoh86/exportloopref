@@ -1,8 +1,10 @@
 module github.com/kyoh86/exportloopref
 
-go 1.14
+go 1.18
+
+require golang.org/x/tools v0.2.0
 
 require (
-	golang.org/x/sys v0.0.0-20220224003255-dbe011f71a99 // indirect
-	golang.org/x/tools v0.1.9
+	golang.org/x/mod v0.6.0 // indirect
+	golang.org/x/sys v0.1.0 // indirect
 )
