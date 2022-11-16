@@ -298,6 +298,9 @@ func (s *Searcher) isVar(loop ast.Node, expr ast.Expr) bool {
 	}
 	switch typed := expr.(type) {
 	case (*ast.Ident):
+		if typed.Obj == nil {
+			return false // global var in another file (ref: #13)
+		}
 		_, isVar := vars[typed.Obj.Pos()]
 		return isVar
 	case (*ast.IndexExpr): // like X[Y], check X
