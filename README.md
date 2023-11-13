@@ -177,7 +177,7 @@ func printp(p *int) {
 go:
 
 ```console
-$ go get github.com/kyoh86/exportloopref/cmd/exportloopref
+$ go install github.com/kyoh86/exportloopref/cmd/exportloopref@latest
 ```
 
 [homebrew](https://brew.sh/):
